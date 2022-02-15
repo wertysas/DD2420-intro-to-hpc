@@ -24,7 +24,7 @@ def test_dgemm():
 
 
 def test_dgemm_numpy():
-    N = 256
+    N = 512
     A = np.ones((N, N))
     B = 5.0 * np.ones((N, N))
     C = np.zeros((N, N))

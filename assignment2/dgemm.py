@@ -54,8 +54,12 @@ def time_dgemm_numpy(N):
     return t1 - t0
 
 
+def get_flops_dgemm(time_millis, N):
+    return 2 * N**3 * 1e3 / time_millis
+
+
 if __name__ == '__main__':
-    sizes = [64, 128, 192, 256, 320, 384, 448, 512] #[2**i for i in range(4, 10)]
+    sizes = [16, 32, 64, 128, 192, 256, 320, 384, 448, 512] #[2**i for i in range(4, 10)]
     means_list = []
     var_list = []
     means_array = []
@@ -81,16 +85,29 @@ if __name__ == '__main__':
         means_np_array.append(x.mean())
         var_np_array.append(x.std())
 
+    # Execution time plots
     fig, ax = plt.subplots()
-    print(means_list)
-    print(var_list)
     ax.errorbar(sizes, means_list, yerr=var_list, label='python list', capsize=3)
     ax.errorbar(sizes, means_array, yerr=var_array, label='python array', capsize=3)
     ax.errorbar(sizes, means_np_array, yerr=var_np_array, label='numpy array', capsize=3)
-    plt.yscale("log")
     plt.legend()
+    plt.yscale("log")
     plt.title("Matrix DGEMM execution times")
     plt.ylabel("Execution time (milliseconds)")
+    plt.xlabel("Matrix dimension N")
+    plt.grid(which="both")
+    plt.show()
+
+    # FLOPS plot
+    fig, ax = plt.subplots()
+    ax.plot(sizes, [get_flops_dgemm(means_list[i], sizes[i]) for i in range(len(sizes))], label='python list')
+    ax.plot(sizes, [get_flops_dgemm(means_array[i], sizes[i]) for i in range(len(sizes))], label='python array')
+    ax.plot(sizes, [get_flops_dgemm(means_np_array[i], sizes[i]) for i in range(len(sizes))], label='numpy array')
+    ax.plot(sizes, [5*1e9 for _ in range(len(sizes))], linestyle='dotted', label='theoretical peak (single core')
+    plt.legend()
+    plt.yscale("log")
+    plt.title("Matrix DGEMM FLOPS")
+    plt.ylabel("FLOPS")
     plt.xlabel("Matrix dimension N")
     plt.grid(which="both")
     plt.show()
