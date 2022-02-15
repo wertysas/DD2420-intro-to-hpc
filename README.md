@@ -1,1 +1,1 @@
-# DD2420-intro-to-hpc
+# DD2358-intro-to-hpc
