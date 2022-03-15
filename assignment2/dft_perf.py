@@ -5,8 +5,11 @@ Date: 2022-03-14
 
 import numpy as np
 import matplotlib.pyplot as plt
-from assignment2.dft import DFT, DFT2
+from matplotlib import rcParams
+from dft import DFT, DFT2
 from time import perf_counter_ns as timer
+
+SAVE_FIG = False
 
 
 def time_dft(n):
@@ -42,18 +45,35 @@ def time_dft(n):
     return elapsed_time, elapsed_time_np, dft2_time
 
 
-N = [8, 16, 32, 64] + [64*i for i in range(2, 14)] # should be up to 16 (64*16=1024)
+N = [8] + [64*i for i in range(1, 20)] # should be up to 16 (64*16=1024)
 timings = []
 timings_np = []
 timings_dft2 = []
 
 for n in N:
     t, tnp, t_dft2 =time_dft(n)
-    timings.append(t)
-    timings_np.append(tnp)
-    timings_dft2.append(t_dft2)
-plt.plot(N, timings, label='DFT list implementation')
-plt.plot(N, timings_dft2, label='DFT2 list implementation')
-plt.plot(N, timings_np, label='numpy.fft.fft')
-plt.legend()
+    timings.append(t*1e-9)
+    timings_np.append(tnp*1e-9)
+    timings_dft2.append(t_dft2*1e-9)
+
+# plotting
+rcParams.update({'font.size': 20})
+fig, ax = plt.subplots(figsize=(16, 10))
+ax.set_xlabel("Container size")
+ax.set_ylabel("Execution time (s)")
+
+ax.plot(N, timings, "o:", label='DFT list implementation', linewidth=2.0)
+plt.plot(N, timings_dft2, "o:", label='DFT2 list implementation', linewidth=2.0)
+ax.plot(N, timings_np, "o:", label='numpy.fft.fft', linewidth=2.0)
+ax.legend()
+
+#ax.set(yscale="log")
+plt.grid(True, which="both")
+ax.set_xticks(N, minor=False)
+fig.suptitle("DFT execution times")
+fig.tight_layout()
+
+if SAVE_FIG:
+    fig.savefig("figures/dft_execution_times.pdf", format="pdf")
+
 plt.show()

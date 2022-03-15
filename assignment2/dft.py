@@ -7,7 +7,6 @@ import numpy as np
 
 
 def DFT(xre, xim, Xre, Xim):
-    #assert len(xre) == len(xim), "Error input dimensions does not agree"
     N = len(xre)
     for k in range(N):
         Xre[k] = 0
@@ -25,8 +24,10 @@ def DFT2(xre, xim ,Xre, Xim):
         Xim[k] = 0
         wk = w*k
         for n in range(N):
-            Xre[k] += xre[n] * np.cos(wk*n) + xim[n]*np.sin(wk*n)
-            Xim[k] += -xre[n] * np.sin(wk*n) + xim[n]*np.cos(wk*n)
+            c = np.cos(wk*n)
+            s = np.sin(wk*n)
+            Xre[k] += xre[n]*c + xim[n]*s
+            Xim[k] += -xre[n]*s + xim[n]*c
 
 
 
