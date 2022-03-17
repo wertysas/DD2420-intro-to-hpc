@@ -8,7 +8,11 @@ Game of life code fetched from: https://www.geeksforgeeks.org/conways-game-life-
 import argparse
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib import rcParams
 import matplotlib.animation as animation
+from time import perf_counter_ns as timer
+
+
 
 # setting up the values for the grid
 ON = 255
@@ -59,7 +63,7 @@ def addGosperGliderGun(i, j, grid):
     grid[i:i + 11, j:j + 38] = gun
 
 
-def update(frameNum, img, grid, N):
+def update(grid, N):
     # copy grid since we require 8 neighbors
     # for calculation and we go line by line
     newGrid = grid.copy()
@@ -83,9 +87,7 @@ def update(frameNum, img, grid, N):
                     newGrid[i, j] = ON
 
     # update data
-    img.set_data(newGrid)
     grid[:] = newGrid[:]
-    return img,
 
 
 # main() function
@@ -128,22 +130,61 @@ def main():
         # more off than on
         grid = randomGrid(N)
 
-    # set up animation
-    fig, ax = plt.subplots()
-    img = ax.imshow(grid, interpolation='nearest')
-    ani = animation.FuncAnimation(fig, update, fargs=(img, grid, N,),
-                                  frames=10,
-                                  interval=updateInterval,
-                                  save_count=50)
+    n_iter = 1000
+    for i in range(n_iter):
+        update(grid, N)
 
-    # # of frames?
-    # set output file
-    if args.movfile:
-        ani.save(args.movfile, fps=30, extra_args=['-vcodec', 'libx264'])
+    # # set up animation
+    # fig, ax = plt.subplots()
+    # img = ax.imshow(grid, interpolation='nearest')
+    # ani = animation.FuncAnimation(fig, update, fargs=(img, grid, N,),
+    #                               frames=10,
+    #                               interval=updateInterval,
+    #                               save_count=50)
 
-    plt.show()
+    # # # of frames?
+    # # set output file
+    # if args.movfile:
+    #     ani.save(args.movfile, fps=30, extra_args=['-vcodec', 'libx264'])
+
+    # plt.show()
 
 
 # call main
 if __name__ == '__main__':
-    main()
+    n_iter = 100
+
+    grid_sizes = [64, 128, 256, 512, 1024]
+    exec_times = []
+    for N in grid_sizes:
+        print(N)
+        t0 = timer()
+        grid = np.zeros(N * N).reshape(N, N)
+        addGosperGliderGun(10, 10, grid)
+        for i in range(n_iter):
+            update(grid, N)
+        t1 = timer() - t0
+        exec_times.append(t1)
+
+    rcParams.update({'font.size': 20})
+    fig, ax = plt.subplots(figsize=(16, 10))
+    ax.set_xlabel("Container size")
+    ax.set_ylabel("Execution time (s)")
+
+    ax.plot(grid_sizes, exec_times, "o:", label='Game Of life Execution Times', linewidth=2.0)
+    ax.legend()
+
+    #ax.set(yscale="log")
+    plt.grid(True, which="both")
+    ax.set_xticks(N, minor=False)
+    fig.suptitle("DFT execution times")
+    fig.tight_layout()
+
+
+    plt.show()
+
+
+
+
+
+

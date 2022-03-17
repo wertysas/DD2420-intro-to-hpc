@@ -6,6 +6,7 @@ Date: 2022-02-14
 from time import perf_counter_ns as timer
 from array import array
 import numpy as np
+import numexpr as ne
 import matplotlib.pyplot as plt
 
 
@@ -23,6 +24,10 @@ def dgemm(A, B, C, N):
 
 def dgemm_numpy(A, B, C):
      C += A.dot(B)
+
+
+def dgemm_numexpr(A, B, C):
+    ne.evaluate("C + A*B", out=C)
 
 
 def time_dgemm_list(N):
@@ -44,6 +49,7 @@ def time_dgemm_array(N):
     t1 = timer()
     return t1 - t0
 
+
 def time_dgemm_numpy(N):
     A = np.ones((N, N))
     B = 2 * np.ones((N, N))
@@ -54,10 +60,21 @@ def time_dgemm_numpy(N):
     return t1 - t0
 
 
+def time_dgemm_numexpr(N):
+    A = np.ones((N, N))
+    B = 2 * np.ones((N, N))
+    C = np.zeros((N, N))
+    t0 = timer()
+    dgemm_numexpr(A, B, C)
+    t1 = timer()
+    return  t1 - t0
+
+
 def get_flops_dgemm(time_millis, N):
     return 2 * N**3 * 1e3 / time_millis
 
 
+# TODO: DRY! This code can cause potential eye damage.
 if __name__ == '__main__':
     sizes = [16, 32, 64, 128, 192, 256, 320, 384, 448, 512] #[2**i for i in range(4, 10)]
     means_list = []
@@ -66,15 +83,19 @@ if __name__ == '__main__':
     var_array = []
     means_np_array = []
     var_np_array = []
+    means_ne_array = []
+    var_ne_array = []
     for N in sizes:
         print(N)
         list_t = []
         array_t = []
         np_array_t = []
+        ne_array_t = []
         for j in range(10):
             list_t.append(time_dgemm_list(N))
             array_t.append(time_dgemm_array(N))
             np_array_t.append(time_dgemm_numpy(N))
+            ne_array_t.append(time_dgemm_numexpr(N))
         x = np.array(list_t) * 1e-6 # We scale from ns to ms
         means_list.append(x.mean())
         var_list.append(x.std())
@@ -84,12 +105,16 @@ if __name__ == '__main__':
         x = np.array(np_array_t) * 1e-6
         means_np_array.append(x.mean())
         var_np_array.append(x.std())
+        x = np.array(ne_array_t) * 1e-6
+        means_ne_array.append(x.mean())
+        var_ne_array.append(x.std())
 
     # Execution time plots
     fig, ax = plt.subplots()
     ax.errorbar(sizes, means_list, yerr=var_list, label='python list', capsize=3)
     ax.errorbar(sizes, means_array, yerr=var_array, label='python array', capsize=3)
     ax.errorbar(sizes, means_np_array, yerr=var_np_array, label='numpy array', capsize=3)
+    ax.errorbar(sizes, means_ne_array, yerr=var_ne_array, label='numexpr & numpy ', capsize=3)
     plt.legend()
     plt.yscale("log")
     plt.title("Matrix DGEMM execution times")
@@ -103,6 +128,7 @@ if __name__ == '__main__':
     ax.plot(sizes, [get_flops_dgemm(means_list[i], sizes[i]) for i in range(len(sizes))], label='python list')
     ax.plot(sizes, [get_flops_dgemm(means_array[i], sizes[i]) for i in range(len(sizes))], label='python array')
     ax.plot(sizes, [get_flops_dgemm(means_np_array[i], sizes[i]) for i in range(len(sizes))], label='numpy array')
+    ax.plot(sizes, [get_flops_dgemm(means_ne_array[i], sizes[i]) for i in range(len(sizes))], label='numexpr & numpy')
     ax.plot(sizes, [5*1e9 for _ in range(len(sizes))], linestyle='dotted', label='theoretical peak (single core')
     plt.legend()
     plt.yscale("log")
